@@ -6,32 +6,39 @@
 <body>
     <script>
         function verifyAndRedirectApp() {
-            window.location.reload(true);
             const urlParams = window.location.search;
-
             const appScheme = `assaipj://app/${urlParams}`;
 
-            window.location.href = appScheme;
-            setTimeout(function () {
-               const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        
-                if (/iPad|iPhone/.test(userAgent) && !window.MSStream) {
-                    window.location.href = "https://apps.apple.com/br/app/meu-assa%C3%AD/id979078703";
-                    setTimeout(function () {
-                        window.location.href = "https://www.assai.com.br";
-                    }, 1500)
-                    return
-                }
-                if (/android/i.test(userAgent)) {
-                    setTimeout(function () {
-                        window.location.href = "https://play.google.com/store/apps/details?id=br.com.assai.tokenpj";
-                    }, 2000)
-                    return
-                }
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isIOS = /iPad|iPhone/.test(userAgent) && !window.MSStream;
+            const isAndroid = /android/i.test(userAgent);
 
-                window.location.href = "https://www.assai.com.br";
-            }, 2000)
+            const fallbackURL = isIOS
+                ? "https://apps.apple.com/br/app/meu-assa%C3%AD/id979078703"
+                : "https://play.google.com/store/apps/details?id=br.com.assai.tokenpj";
+
+            const fallbackWebsite = "https://www.assai.com.br";
+
+            setTimeout(function () {
+                window.location.href = fallbackURL;
+
+                // Segunda tentativa de fallback para o site, caso loja também falhe
+                setTimeout(() => {
+                    window.location.href = fallbackWebsite;
+                }, 1500);
+            }, 1500);
+
+            // Disparo do deeplink
+            if (isAndroid) {
+                const iframe = document.createElement("iframe");
+                iframe.style.display = "none";
+                iframe.src = appScheme;
+                document.body.appendChild(iframe);
+            } else {
+                window.location.href = appScheme;
+            }
         }
+
         window.onload = verifyAndRedirectApp;
     </script>
 </body>
