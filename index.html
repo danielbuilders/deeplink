@@ -1,38 +1,326 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Redirecionamento de Aplicativo</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecionando para Assaí PJ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 20px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .message {
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .submessage {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 30px;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .manual-redirect {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
-    <script>
-        function verifyAndRedirectApp() {
-            window.location.reload(true);
-            const urlParams = window.location.search;
+    <div class="container">
+        <div class="logo">A</div>
+        
+        <div id="loading-state">
+            <div class="spinner"></div>
+            <div class="message">Abrindo o aplicativo...</div>
+            <div class="submessage">Aguarde alguns segundos</div>
+        </div>
+        
+        <div id="fallback-state" class="hidden">
+            <div class="message">Aplicativo não encontrado</div>
+            <div class="submessage">Baixe o Assaí PJ para continuar</div>
             
-            const appScheme = `assaipj://app/${urlParams}`;
+            <div class="buttons">
+                <a href="#" id="store-link" class="btn btn-primary">
+                    Baixar Aplicativo
+                </a>
+                <a href="https://www.assai.com.br" class="btn btn-secondary">
+                    Ir para o Site
+                </a>
+            </div>
+            
+            <div class="manual-redirect">
+                <strong>Já tem o app instalado?</strong><br>
+                <a href="#" id="retry-link" style="color: white; text-decoration: underline;">
+                    Tentar abrir novamente
+                </a>
+            </div>
+        </div>
+    </div>
 
-            window.location.href = appScheme;
-
-            setTimeout(function () {
-               const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-
-                if (/iPad|iPhone/.test(userAgent) && !window.MSStream) {
-                    window.location.href = "https://apps.apple.com/br/app/assaí-PJ/id6747126842";
-                    setTimeout(function () {
-                        window.location.href = "https://www.assai.com.br";
-                    }, 5000)
-                    return
+    <script>
+        class AppRedirecter {
+            constructor() {
+                this.urlParams = window.location.search;
+                this.appScheme = `assaipj://app${this.urlParams}`;
+                this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                this.isAndroid = /Android/i.test(navigator.userAgent);
+                this.isMobile = this.isIOS || this.isAndroid;
+                
+                this.appStoreUrl = "https://apps.apple.com/br/app/assaí-pj/id6747126842";
+                this.playStoreUrl = "https://play.google.com/store/apps/details?id=br.com.assai.tokenpj";
+                this.fallbackUrl = "https://www.assai.com.br";
+                
+                this.loadingState = document.getElementById('loading-state');
+                this.fallbackState = document.getElementById('fallback-state');
+                this.storeLink = document.getElementById('store-link');
+                this.retryLink = document.getElementById('retry-link');
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupStoreLink();
+                this.setupRetryLink();
+                this.attemptAppRedirect();
+            }
+            
+            setupStoreLink() {
+                if (this.isIOS) {
+                    this.storeLink.href = this.appStoreUrl;
+                    this.storeLink.textContent = "Baixar na App Store";
+                } else if (this.isAndroid) {
+                    this.storeLink.href = this.playStoreUrl;
+                    this.storeLink.textContent = "Baixar no Google Play";
+                } else {
+                    this.storeLink.href = this.fallbackUrl;
+                    this.storeLink.textContent = "Ir para o Site";
                 }
-                if (/android/i.test(userAgent)) {
-                    setTimeout(function () {
-                        window.location.href = "https://play.google.com/store/apps/details?id=br.com.assai.tokenpj";
-                    }, 5000)
-                    return
+            }
+            
+            setupRetryLink() {
+                this.retryLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showLoadingState();
+                    this.attemptAppRedirect();
+                });
+            }
+            
+            attemptAppRedirect() {
+                if (!this.isMobile) {
+                    // Desktop - redireciona diretamente para o site
+                    setTimeout(() => {
+                        window.location.href = this.fallbackUrl;
+                    }, 1000);
+                    return;
                 }
-
-                window.location.href = "https://www.assai.com.br";
-            }, 5000)
+                
+                const startTime = Date.now();
+                let redirected = false;
+                
+                // Detecta se o usuário saiu da página (app abriu)
+                const visibilityHandler = () => {
+                    if (document.hidden || document.webkitHidden) {
+                        redirected = true;
+                    }
+                };
+                
+                const blurHandler = () => {
+                    redirected = true;
+                };
+                
+                // Event listeners para detectar se o app abriu
+                document.addEventListener('visibilitychange', visibilityHandler);
+                document.addEventListener('webkitvisibilitychange', visibilityHandler);
+                window.addEventListener('blur', blurHandler);
+                window.addEventListener('pagehide', () => {
+                    redirected = true;
+                });
+                
+                // Tenta abrir o app usando diferentes métodos
+                this.tryOpenApp();
+                
+                // Fallback após timeout
+                setTimeout(() => {
+                    // Remove event listeners
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+                    document.removeEventListener('webkitvisibilitychange', visibilityHandler);
+                    window.removeEventListener('blur', blurHandler);
+                    
+                    // Se não redirecionou e passou do tempo limite, mostra fallback
+                    if (!redirected && (Date.now() - startTime) >= 2500) {
+                        this.showFallbackState();
+                    }
+                }, 3000);
+            }
+            
+            tryOpenApp() {
+                if (this.isIOS) {
+                    // iOS - tenta universal link primeiro, depois custom scheme
+                    this.tryUniversalLink() || this.tryCustomScheme();
+                } else if (this.isAndroid) {
+                    // Android - tenta intent primeiro, depois custom scheme
+                    this.tryAndroidIntent() || this.tryCustomScheme();
+                } else {
+                    // Fallback para outros dispositivos
+                    this.tryCustomScheme();
+                }
+            }
+            
+            tryUniversalLink() {
+                // Se você tiver Universal Links configurados
+                // const universalLink = `https://your-domain.com/app${this.urlParams}`;
+                // window.location.href = universalLink;
+                return false; // Retorna false se não tiver Universal Links
+            }
+            
+            tryAndroidIntent() {
+                try {
+                    const intentUrl = `intent://app${this.urlParams}#Intent;scheme=assaipj;package=br.com.assai.tokenpj;end`;
+                    window.location.href = intentUrl;
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            tryCustomScheme() {
+                try {
+                    // Método mais compatível usando iframe oculto
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = this.appScheme;
+                    document.body.appendChild(iframe);
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 1000);
+                    
+                    // Backup: também tenta window.location
+                    setTimeout(() => {
+                        window.location.href = this.appScheme;
+                    }, 100);
+                    
+                    return true;
+                } catch (e) {
+                    console.error('Erro ao tentar abrir o app:', e);
+                    return false;
+                }
+            }
+            
+            showLoadingState() {
+                this.loadingState.classList.remove('hidden');
+                this.fallbackState.classList.add('hidden');
+            }
+            
+            showFallbackState() {
+                this.loadingState.classList.add('hidden');
+                this.fallbackState.classList.remove('hidden');
+            }
         }
-        window.onload = verifyAndRedirectApp;
+        
+        // Inicializa quando a página carrega
+        document.addEventListener('DOMContentLoaded', () => {
+            new AppRedirecter();
+        });
+        
+        // Previne múltiplos carregamentos
+        let redirectStarted = false;
+        window.addEventListener('load', () => {
+            if (!redirectStarted) {
+                redirectStarted = true;
+            }
+        });
     </script>
 </body>
+</html>
