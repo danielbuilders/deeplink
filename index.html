@@ -1,4 +1,4 @@
-<!DOCTYPE html>More actions
+<!DOCTYPE html>
 <html>
 <head>
     <title>Redirecionamento de Aplicativo</title>
@@ -12,6 +12,7 @@
             const appScheme = `assaipj://app/${urlParams}`;
 
             window.location.href = appScheme;
+
             setTimeout(function () {
                const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
@@ -19,18 +20,18 @@
                     window.location.href = "https://apps.apple.com/br/app/assaí-PJ/id6747126842";
                     setTimeout(function () {
                         window.location.href = "https://www.assai.com.br";
-                    }, 1500)
+                    }, 5000)
                     return
                 }
                 if (/android/i.test(userAgent)) {
                     setTimeout(function () {
                         window.location.href = "https://play.google.com/store/apps/details?id=br.com.assai.tokenpj";
-                    }, 2000)
+                    }, 5000)
                     return
                 }
 
                 window.location.href = "https://www.assai.com.br";
-            }, 2000)
+            }, 5000)
         }
         window.onload = verifyAndRedirectApp;
     </script>
