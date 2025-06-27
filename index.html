@@ -198,7 +198,6 @@
             
             attemptAppRedirect() {
                 if (!this.isMobile) {
-                    // Desktop - redireciona diretamente para o site
                     setTimeout(() => {
                         window.location.href = this.fallbackUrl;
                     }, 1000);
@@ -208,7 +207,6 @@
                 const startTime = Date.now();
                 let redirected = false;
                 
-                // Detecta se o usuário saiu da página (app abriu)
                 const visibilityHandler = () => {
                     if (document.hidden || document.webkitHidden) {
                         redirected = true;
@@ -219,7 +217,6 @@
                     redirected = true;
                 };
                 
-                // Event listeners para detectar se o app abriu
                 document.addEventListener('visibilitychange', visibilityHandler);
                 document.addEventListener('webkitvisibilitychange', visibilityHandler);
                 window.addEventListener('blur', blurHandler);
@@ -227,17 +224,13 @@
                     redirected = true;
                 });
                 
-                // Tenta abrir o app usando diferentes métodos
                 this.tryOpenApp();
                 
-                // Fallback após timeout
                 setTimeout(() => {
-                    // Remove event listeners
                     document.removeEventListener('visibilitychange', visibilityHandler);
                     document.removeEventListener('webkitvisibilitychange', visibilityHandler);
                     window.removeEventListener('blur', blurHandler);
                     
-                    // Se não redirecionou e passou do tempo limite, mostra fallback
                     if (!redirected && (Date.now() - startTime) >= 2500) {
                         this.showFallbackState();
                     }
@@ -258,10 +251,7 @@
             }
             
             tryUniversalLink() {
-                // Se você tiver Universal Links configurados
-                // const universalLink = `https://your-domain.com/app${this.urlParams}`;
-                // window.location.href = universalLink;
-                return false; // Retorna false se não tiver Universal Links
+                return false;
             }
             
             tryAndroidIntent() {
@@ -276,7 +266,6 @@
             
             tryCustomScheme() {
                 try {
-                    // Método mais compatível usando iframe oculto
                     const iframe = document.createElement('iframe');
                     iframe.style.display = 'none';
                     iframe.src = this.appScheme;
@@ -286,7 +275,6 @@
                         document.body.removeChild(iframe);
                     }, 1000);
                     
-                    // Backup: também tenta window.location
                     setTimeout(() => {
                         window.location.href = this.appScheme;
                     }, 100);
@@ -309,12 +297,10 @@
             }
         }
         
-        // Inicializa quando a página carrega
         document.addEventListener('DOMContentLoaded', () => {
             new AppRedirecter();
         });
         
-        // Previne múltiplos carregamentos
         let redirectStarted = false;
         window.addEventListener('load', () => {
             if (!redirectStarted) {
